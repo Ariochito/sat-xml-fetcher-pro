@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { FileUp, UserCircle, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -21,7 +21,6 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Simulate CAPTCHA refresh - in production this would fetch from backend
   const handleRefreshCaptcha = () => {
     toast({
       title: "CAPTCHA actualizado",
@@ -29,33 +28,82 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate authentication
-    setTimeout(() => {
-      setLoading(false);
-      if (authMethod === "rfc" && username && password && captchaInput) {
-        toast({
-          title: "Autenticación exitosa",
-          description: "Conexión establecida con el SAT",
-        });
-        onLoginSuccess();
+
+    try {
+      let authResult;
+      
+      if (authMethod === "rfc") {
+        const { data: logData, error: logError } = await supabase
+          .from('auth_logs')
+          .insert([
+            {
+              auth_method: 'rfc',
+              success: false,
+              user_id: username,
+            }
+          ]);
+
+        if (username && password && captchaInput) {
+          authResult = await supabase.auth.signInWithPassword({
+            email: `${username}@demo.com`,
+            password: password,
+          });
+
+          if (authResult.error) {
+            if (authResult.error.message.includes('Invalid login credentials')) {
+              authResult = await supabase.auth.signUp({
+                email: `${username}@demo.com`,
+                password: password,
+              });
+            }
+          }
+        }
       } else if (authMethod === "certificate" && certificateFile && keyFile && password) {
+        const { data: logData, error: logError } = await supabase
+          .from('auth_logs')
+          .insert([
+            {
+              auth_method: 'certificate',
+              success: false,
+              user_id: certificateFile.name,
+            }
+          ]);
+
         toast({
           title: "Autenticación con certificado exitosa",
           description: "Conexión establecida con el SAT",
         });
         onLoginSuccess();
-      } else {
-        toast({
-          title: "Error de autenticación",
-          description: "Por favor verifique sus credenciales",
-          variant: "destructive",
-        });
+        return;
       }
-    }, 1500);
+
+      if (authResult?.error) {
+        throw authResult.error;
+      }
+
+      await supabase
+        .from('auth_logs')
+        .insert([
+          {
+            auth_method: authMethod,
+            success: true,
+            user_id: username,
+          }
+        ]);
+
+      onLoginSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Error de autenticación",
+        description: error.message || "Por favor verifique sus credenciales",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
