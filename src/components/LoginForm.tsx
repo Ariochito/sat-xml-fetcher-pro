@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { FileUp, UserCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { FileUp, UserCircle, RefreshCw } from "lucide-react";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -17,8 +17,17 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [keyFile, setKeyFile] = useState<File | null>(null);
+  const [captchaInput, setCaptchaInput] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Simulate CAPTCHA refresh - in production this would fetch from backend
+  const handleRefreshCaptcha = () => {
+    toast({
+      title: "CAPTCHA actualizado",
+      description: "Se ha generado un nuevo CAPTCHA",
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +36,7 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
     // Simulate authentication
     setTimeout(() => {
       setLoading(false);
-      if (authMethod === "rfc" && username && password) {
+      if (authMethod === "rfc" && username && password && captchaInput) {
         toast({
           title: "Autenticación exitosa",
           description: "Conexión establecida con el SAT",
@@ -101,6 +110,31 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="captcha">CAPTCHA</Label>
+                <div className="flex space-x-2">
+                  <div className="flex-1">
+                    <Input
+                      id="captcha"
+                      value={captchaInput}
+                      onChange={(e) => setCaptchaInput(e.target.value)}
+                      placeholder="Ingrese el código CAPTCHA"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRefreshCaptcha}
+                    className="flex-shrink-0"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-2 p-4 bg-gray-100 rounded-md flex items-center justify-center">
+                  <p className="text-gray-500 text-sm">Imagen CAPTCHA aquí</p>
+                </div>
+              </div>
             </>
           ) : (
             <>
@@ -141,7 +175,14 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         </form>
       </CardContent>
       <CardFooter className="flex justify-center text-sm text-gray-500">
-        Este es un sistema de demostración para descargar XML del SAT
+        <a 
+          href="https://cfdiau.sat.gob.mx/nidp/wsfed/ep?id=SATUPCFDiCon&sid=0&option=credential&sid=0" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-primary hover:underline"
+        >
+          Portal del SAT
+        </a>
       </CardFooter>
     </Card>
   );
