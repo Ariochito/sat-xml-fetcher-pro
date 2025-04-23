@@ -18,16 +18,16 @@ const XMLDownloader: React.FC<XMLDownloaderProps> = ({
   const downloadSingleXML = (doc: XMLDocument) => {
     const blob = new Blob([doc.content], { type: 'application/xml' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = url;
     a.download = `${doc.name}.xml`;
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
 
-  const downloadMultipleXMLs = (docs: XMLDocument[]) => {
+  const handleMultipleDownloads = (docs: XMLDocument[]) => {
     docs.forEach(doc => downloadSingleXML(doc));
   };
 
@@ -52,4 +52,34 @@ const XMLDownloader: React.FC<XMLDownloaderProps> = ({
   return null;
 };
 
+// Export the component and utility functions
 export default XMLDownloader;
+
+// Export utility functions separately
+export const downloadUtils = {
+  downloadSingleXML: (doc: XMLDocument) => {
+    const blob = new Blob([doc.content], { type: 'application/xml' });
+    const url = window.URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${doc.name}.xml`;
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
+  
+  downloadMultipleXMLs: (docs: XMLDocument[]) => {
+    docs.forEach(doc => {
+      const blob = new Blob([doc.content], { type: 'application/xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = `${doc.name}.xml`;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
+  }
+};

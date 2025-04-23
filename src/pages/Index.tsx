@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { mockXMLDocuments } from "@/utils/mockData";
 import LoginForm from "@/components/LoginForm";
 import DateRangeSelector from "@/components/DateRangeSelector";
 import XMLTable from "@/components/XMLTable";
 import XMLPreview from "@/components/XMLPreview";
-import XMLDownloader from "@/components/XMLDownloader";
+import XMLDownloader, { downloadUtils } from "@/components/XMLDownloader";
 import { XMLDocument } from "@/utils/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileDown, LogOut } from "lucide-react";
@@ -18,7 +17,7 @@ const Index = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   
-  const { downloadSingleXML, downloadMultipleXMLs } = XMLDownloader({});
+  const { downloadSingleXML, downloadMultipleXMLs } = downloadUtils;
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
@@ -91,7 +90,23 @@ const Index = () => {
       </header>
       
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <DateRangeSelector onDateRangeChange={handleDateRangeChange} />
+        <DateRangeSelector onDateRangeChange={(startDate, endDate) => {
+          setIsSearching(true);
+          
+          // Simulate API call with a delay
+          setTimeout(() => {
+            // Filter mock data based on date range (simple string comparison for demo)
+            const startDateString = startDate.toISOString().split('T')[0];
+            const endDateString = endDate.toISOString().split('T')[0];
+            
+            const filteredDocuments = mockXMLDocuments.filter(doc => {
+              return doc.date >= startDateString && doc.date <= endDateString;
+            });
+            
+            setDocuments(filteredDocuments);
+            setIsSearching(false);
+          }, 1000);
+        }} />
         
         {isSearching ? (
           <Card>
